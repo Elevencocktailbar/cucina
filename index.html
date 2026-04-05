@@ -354,5 +354,48 @@
     updateBadge('Pronto');
     renderRequests();
   </script>
+
+<script>
+const SERVER = "http://192.168.1.221:8765";
+let data = [];
+
+async function load() {
+  try {
+    const res = await fetch(SERVER + "/api/requests");
+    const json = await res.json();
+    data = json.requests;
+    render();
+  } catch(e){}
+}
+
+function render() {
+  const container = document.body;
+  let list = document.getElementById("dynamicList");
+  if(!list) {
+    list = document.createElement("div");
+    list.id = "dynamicList";
+    container.appendChild(list);
+  }
+  list.innerHTML = "";
+  data.forEach(r => {
+    const el = document.createElement("div");
+    el.style.padding="20px";
+    el.style.margin="10px";
+    el.style.background="#fff";
+    el.style.borderRadius="10px";
+    el.innerText = "Tavolo " + r.table + (r.status=="ready"?" (PRONTO)":"");
+    el.onclick = async () => {
+      await fetch(SERVER + "/api/ready", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:r.id})
+      });
+    };
+    list.appendChild(el);
+  });
+}
+
+setInterval(load,1000);
+</script>
 </body>
 </html>
