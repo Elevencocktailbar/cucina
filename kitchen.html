@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Cucina Tavoli</title>
+  <meta name="theme-color" content="#f5f1e6" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Cucina Tavoli" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    :root {
+      --bg: #f5f1e6;
+      --card: rgba(255,255,255,0.78);
+      --card-border: rgba(0,0,0,0.08);
+      --text: #111;
+      --muted: #5f665f;
+      --shadow: 0 10px 28px rgba(0,0,0,0.08);
+      --danger: #ff5a52;
+      --warning: #ffd84a;
+      --warning-text: #3f3300;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100%;
+      overscroll-behavior: none;
+      user-select: none;
+    }
+
+    body { padding: 12px; }
+
+    .app-shell {
+      min-height: calc(100vh - 24px);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 12px;
+    }
+
+    .header-card,
+    .summary-card,
+    .list-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .header-card {
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 34px);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+
+    .title-wrap p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: clamp(13px, 1.8vw, 16px);
+    }
+
+    .badge {
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(0,0,0,0.06);
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .summary-card {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .summary-pill {
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 16px;
+      padding: 12px 14px;
+      min-height: 84px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .summary-label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .summary-value {
+      font-size: clamp(22px, 3.5vw, 34px);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .list-card {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-self: start;
+      min-height: 160px;
+    }
+
+    .empty-state {
+      min-height: 180px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.65);
+      border: 1px dashed rgba(0,0,0,0.1);
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .request-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 112px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,0.08);
+      background: linear-gradient(180deg, rgba(255,90,82,0.20), rgba(255,90,82,0.12));
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+    }
+
+    .request-row:active { transform: scale(0.985); }
+    .request-row:hover { box-shadow: 0 12px 30px rgba(0,0,0,0.10); }
+
+    .request-row::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 8px;
+      border-radius: 18px 0 0 18px;
+      background: var(--danger);
+      opacity: 0.95;
+    }
+
+    .request-row.ready {
+      background: linear-gradient(180deg, rgba(255,216,74,0.40), rgba(255,216,74,0.24));
+      border-color: rgba(255,216,74,0.55);
+      animation: rowBlink 1s steps(2, start) infinite;
+    }
+
+    .request-row.ready::before { background: var(--warning); }
+
+    .row-main {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .row-title {
+      font-size: clamp(30px, 5vw, 44px);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .row-sub {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+
+    .request-row.ready .row-sub { color: var(--warning-text); }
+
+    .state-pill {
+      min-width: 138px;
+      text-align: center;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(0,0,0,0.06);
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .request-row.ready .state-pill {
+      background: rgba(255, 248, 204, 0.92);
+      color: var(--warning-text);
+    }
+
+    @keyframes rowBlink {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(0.88); }
+    }
+
+    @media (max-width: 820px) {
+      body { padding: 10px; }
+      .app-shell { min-height: calc(100vh - 20px); }
+      .summary-card { grid-template-columns: 1fr; }
+      .request-row {
+        min-height: 96px;
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+      .state-pill {
+        width: fit-content;
+        min-width: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <section class="header-card">
+      <div class="title-wrap">
+        <h1>Cucina</h1>
+        <p>Richieste ricevute dal tablet principale in ordine di arrivo.</p>
+      </div>
+      <div class="badge" id="connectionBadge">In attesa collegamento</div>
+    </section>
+
+    <section class="summary-card">
+      <div class="summary-pill">
+        <div class="summary-label">Richieste attive</div>
+        <div class="summary-value" id="activeCount">0</div>
+      </div>
+      <div class="summary-pill">
+        <div class="summary-label">Pronte in attesa</div>
+        <div class="summary-value" id="readyCount">0</div>
+      </div>
+    </section>
+
+    <section class="list-card">
+      <div id="requestList" class="empty-state">Nessun tavolo ricevuto.</div>
+    </section>
+  </div>
+
+  <script>
+    const requests = [];
+
+    function updateBadge(text) {
+      document.getElementById('connectionBadge').textContent = text;
+    }
+
+    function updateSummary() {
+      document.getElementById('activeCount').textContent = String(requests.length);
+      document.getElementById('readyCount').textContent = String(requests.filter(r => r.status === 'ready_waiting_bar_ack').length);
+    }
+
+    function renderRequests() {
+      const host = document.getElementById('requestList');
+      updateSummary();
+
+      if (!requests.length) {
+        host.className = 'empty-state';
+        host.textContent = 'Nessun tavolo ricevuto.';
+        return;
+      }
+
+      host.className = '';
+      host.innerHTML = requests.map(req => {
+        const isReady = req.status === 'ready_waiting_bar_ack';
+        const sub = isReady ? 'Pronto · attesa accettazione bar' : 'In cucina';
+        const pill = isReady ? 'Pronto' : 'In lavorazione';
+        return `
+          <button class="request-row${isReady ? ' ready' : ''}" data-id="${req.id}" type="button">
+            <div class="row-main">
+              <div class="row-title">Tavolo ${req.tableId}</div>
+              <div class="row-sub">${sub}</div>
+            </div>
+            <div class="state-pill">${pill}</div>
+          </button>
+        `;
+      }).join('');
+
+      host.querySelectorAll('.request-row').forEach((row) => {
+        row.addEventListener('click', () => markReady(row.dataset.id));
+      });
+    }
+
+    function receiveKitchenRequest(payload) {
+      if (!payload || payload.id == null || payload.tableId == null) return;
+      requests.push({
+        id: String(payload.id),
+        tableId: Number(payload.tableId),
+        status: 'preparing'
+      });
+      renderRequests();
+    }
+
+    function markReady(requestId) {
+      const req = requests.find(item => item.id === String(requestId));
+      if (!req || req.status === 'ready_waiting_bar_ack') return;
+      req.status = 'ready_waiting_bar_ack';
+      renderRequests();
+
+      if (window.opener && typeof window.opener.receiveKitchenReady === 'function') {
+        try {
+          window.opener.receiveKitchenReady({ id: req.id, tableId: req.tableId });
+          updateBadge('Chiamata inviata al bar');
+          return;
+        } catch (e) {}
+      }
+
+      updateBadge('Pronto segnato');
+    }
+
+    function acknowledgeFromBar(requestId) {
+      const index = requests.findIndex(item => item.id === String(requestId));
+      if (index === -1) return;
+      requests.splice(index, 1);
+      renderRequests();
+    }
+
+    window.receiveKitchenRequest = receiveKitchenRequest;
+    window.acknowledgeFromBar = acknowledgeFromBar;
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+      });
+    }
+
+    updateBadge('Pronto');
+    renderRequests();
+  </script>
+</body>
+</html>
